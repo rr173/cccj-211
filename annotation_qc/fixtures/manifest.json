@@ -1,0 +1,9 @@
+{
+  "documents": [
+    {
+      "doc_id": "D1",
+      "path": "sources/doc1.txt",
+      "sha256": "acf60247999218de21eaf107a96d588e9a82e80860a569c5a6689c2f9743c05a"
+    }
+  ]
+}

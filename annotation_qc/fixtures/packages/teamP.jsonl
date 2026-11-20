@@ -1,0 +1,3 @@
+{"doc_id": "D1", "kind": "package", "package_id": "PKG-teamP", "source_digest": "acf60247999218de21eaf107a96d588e9a82e80860a569c5a6689c2f9743c05a", "team_id": "teamP"}
+{"kind": "review", "layer": "annex", "ranges": [[28, 34]]}
+{"end": 34, "id": "a1", "kind": "fragment", "label": "A1", "layer": "annex", "seen_text": "stuvwx", "start": 28}

@@ -1,0 +1,31 @@
+{
+  "layers": {
+    "annex": {
+      "labels": [
+        "A1"
+      ],
+      "min_support": 2
+    },
+    "clause": {
+      "labels": [
+        "L1",
+        "L2",
+        "L3",
+        "L4"
+      ],
+      "min_support": 2
+    }
+  },
+  "relation_types": {
+    "ref": {
+      "from_layer": "clause",
+      "min_support": 2,
+      "to_layer": "annex"
+    },
+    "reverse_ref": {
+      "from_layer": "annex",
+      "min_support": 2,
+      "to_layer": "clause"
+    }
+  }
+}

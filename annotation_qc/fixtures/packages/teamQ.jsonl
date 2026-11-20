@@ -1,0 +1,5 @@
+{"doc_id": "D1", "kind": "package", "package_id": "PKG-teamQ", "source_digest": "acf60247999218de21eaf107a96d588e9a82e80860a569c5a6689c2f9743c05a", "team_id": "teamQ"}
+{"kind": "review", "layer": "clause", "ranges": [[28, 31]]}
+{"kind": "review", "layer": "annex", "ranges": [[28, 34]]}
+{"end": 31, "id": "q1", "kind": "fragment", "label": "L1", "layer": "clause", "seen_text": "stu", "start": 28}
+{"end": 34, "id": "qa", "kind": "fragment", "label": "A1", "layer": "annex", "seen_text": "stuvwx", "start": 28}

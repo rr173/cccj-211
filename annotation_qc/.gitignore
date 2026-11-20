@@ -1,0 +1,16 @@
+# 构建产物与运行时规模数据（不提交）
+out/
+*.db
+*.db-wal
+*.db-shm
+*.reject.json
+scale_tmp/
+/tmp/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 夹具由 tools/make_fixtures.py 可重建；默认保留小夹具便于审阅，
+# 如需排除可取消下一行注释
+# fixtures/

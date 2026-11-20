@@ -1,0 +1,112 @@
+{
+  "doc_sha256": "acf60247999218de21eaf107a96d588e9a82e80860a569c5a6689c2f9743c05a",
+  "regions": {
+    "R1": {
+      "candidate_votes_each": 1,
+      "denominator": 4,
+      "envelope": [
+        0,
+        9
+      ],
+      "excluded_team": "teamE",
+      "no_fragment_votes": 1,
+      "winner": "pending"
+    },
+    "R2": {
+      "L3_votes": 2,
+      "denominator": 4,
+      "envelope": [
+        10,
+        18
+      ],
+      "no_fragment_votes": 1,
+      "self_contradiction": [
+        "teamH"
+      ],
+      "winner": "pending"
+    },
+    "R3": {
+      "candidate_votes": 2,
+      "denominator": 5,
+      "envelope": [
+        19,
+        26
+      ],
+      "no_fragment_votes": 3,
+      "winner": "no_fragment"
+    },
+    "R4a": {
+      "envelope": [
+        28,
+        31
+      ],
+      "winner_label": "L1"
+    },
+    "R4b": {
+      "envelope": [
+        31,
+        34
+      ],
+      "winner_label": "L1"
+    },
+    "annex": {
+      "envelope": [
+        28,
+        34
+      ],
+      "winner_label": "A1"
+    }
+  },
+  "relations": {
+    "blocked_team": "teamR",
+    "conflict_group": {
+      "conflict": 1,
+      "decision": "pending",
+      "denominator": 2,
+      "for": 1,
+      "from": [
+        31,
+        34,
+        "L1"
+      ],
+      "to": [
+        28,
+        34,
+        "A1"
+      ],
+      "type": "ref"
+    },
+    "forward_confirmed": {
+      "decision": "confirmed",
+      "denominator": 2,
+      "for": 2,
+      "from": [
+        28,
+        31,
+        "L1"
+      ],
+      "to": [
+        28,
+        34,
+        "A1"
+      ],
+      "type": "ref"
+    },
+    "reverse_pending": {
+      "decision": "pending",
+      "denominator": 1,
+      "for": 1,
+      "from": [
+        28,
+        34,
+        "A1"
+      ],
+      "to": [
+        28,
+        31,
+        "L1"
+      ],
+      "type": "reverse_ref"
+    }
+  }
+}
