@@ -9,6 +9,11 @@
 - **复核工作库** `review_item`（区域待核、关系待核、被阻断的原始关系）；
 - 以及完整的证据链（原文摘要、字节坐标、包/文件/行/记录序号、审核区间）。
 
+在此之上，**裁决工作区**（`docs/adjudication.md`）把复核意见变成可合并的
+裁决：从同一构建库初始化独立只读底稿，导入各复核员的工单，按三方合并把
+两份工单一起合入审定稿，再按公文批次登记审定发布。它不改变自动质检的
+计票结果，也不重新读取标注团队的交付包。
+
 仅依赖 Python 3.11 标准库与 SQLite，可在 `python -I` 下运行；不做 OCR、
 文本修订、自动抽取或标注界面。
 
@@ -23,12 +28,28 @@ qc/
   query.py      只读查询、证据展开、覆盖缺口复算、流式导出
   cli.py        命令行入口
   schema.sql    SQLite 库结构
+  ws_schema.sql 裁决工作区库结构
+  ws_common.py  工作区连接/事务/文件锁/稳定标识
+  ws_init.py    用现有构建库初始化独立工作区
+  ws_state.py   按版本读取判定、待办与证据
+  ws_source.py  按库中摘要核对的原文存取
+  ws_ticket.py  工单解析与端点解析
+  ws_propose.py 按基版构造可合并提案并自洽预检
+  ws_import.py  工单导入（稳定身份、幂等）
+  ws_merge.py   三方合批、依赖检查、原子写版本、幂等回执
+  ws_release.py 发布登记、待办阻挡、交付快照与流式导出
+  ws_view.py    按版本查看与证据展开
+  ws_cli.py     工作区命令行（qc-ws）
 tools/
   make_fixtures.py  可重建小夹具（含独立手算表 hand_calc.json）
   scalegen.py       运行时规模生成器（产物不提交）
+  ws_fixture.py     可复跑的裁决小样本（只留生成方式）
+  fanoutgen.py      运行时高扇出引用生成器（产物不提交）
 tests/
-  test_pipeline.py  29 个 unittest 用例
+  test_pipeline.py  31 个 unittest 用例
+  test_workspace.py 26 个裁决工作区用例
 docs/usage.md       入口与数据格式说明
+docs/adjudication.md 裁决工作区、工单合批与审定发布
 ```
 
 ## 核心规则实现
@@ -93,6 +114,22 @@ docs/usage.md       入口与数据格式说明
   `SEEN_TEXT_MISMATCH`、`UNKNOWN_LAYER`、`UNKNOWN_LABEL`、
   `UNKNOWN_RELATION_TYPE`、`RELATION_LAYER_MISMATCH`、`PACKAGE_FORMAT` 等。
 
+## 裁决工作区速览
+```bash
+# 初始化独立工作区（原构建库只读）；固定人工规则
+qc-ws init --workspace ws/ --base-db out/warehouse.db --policy fixtures/policy.json
+# 查看指定版本的区域/片段/引用/待办，导入并预览工单
+qc-ws view    --workspace ws/ --rev HEAD --doc D1
+qc-ws import  --workspace ws/ --ticket t.json --manifest fixtures/manifest.json
+qc-ws preview --workspace ws/ --ticket t.json --manifest fixtures/manifest.json
+# 合批（三方合并；冲突整份不生效；幂等回执）
+qc-ws merge   --workspace ws/ --ticket t.json --manifest fixtures/manifest.json
+# 发布：点名版本与公文；有待办则只列阻挡项
+qc-ws release --workspace ws/ --rev HEAD --doc D1
+qc-ws export  --workspace ws/ --release <id> --what relations
+```
+详见 `docs/adjudication.md`。
+
 ## 重建与测试
 ```bash
 # 1. 生成可重建小夹具（含手算表）
@@ -103,8 +140,13 @@ python -I -c "import sys;sys.path.insert(0,'.');from qc.cli import main;raise Sy
   build --manifest fixtures/manifest.json --packages fixtures/packages \
   --policy fixtures/policy.json --out out/warehouse.db
 
-# 3. 全部测试（29 用例）
+# 3. 全部测试（57 用例：管道 31 + 裁决工作区 26）
 python -I -m unittest discover -s tests -v
+
+# 3b. 裁决小样本与高扇出生成（产物不提交）
+python -I tools/ws_fixture.py --root /tmp/wsample \
+  --workspace /tmp/wsample/ws --tickets-dir /tmp/wsample/tickets
+python -I tools/fanoutgen.py --root /tmp/fanout --fanout 20000
 
 # 4. 规模生成与构建实测（产物写到临时目录，不提交）
 python -I tools/scalegen.py --root /tmp/scale --teams 12 \

@@ -101,7 +101,27 @@ python -m qc.cli export --db out/warehouse.db --what review_items --doc D1
 `sqlite3.OperationalError`。正式库不依赖原标注包路径：片段所见原文与
 摘要、审核区间、记录位置证据均已落库。
 
-## 7. 稳定标识
+## 7. 裁决工作区（复核合批与审定发布）
+在构建库之外，`qc-ws` 提供离线的裁决工作区：以构建库初始化只读底稿，
+导入复核员工单、三方合批为审定版本、按公文批次登记发布。
+入口与工单格式见 `docs/adjudication.md`。
+
+```bash
+qc-ws init    --workspace ws/ --base-db out/warehouse.db --policy fixtures/policy.json
+qc-ws view    --workspace ws/ --rev HEAD --doc D1
+qc-ws import  --workspace ws/ --ticket t.json --manifest fixtures/manifest.json
+qc-ws merge   --workspace ws/ --ticket t.json --manifest fixtures/manifest.json
+qc-ws release --workspace ws/ --rev HEAD --doc D1
+qc-ws export  --workspace ws/ --release <id> --what relations
+```
+
+所有工作区命令都在 `python -I` 下运行：
+
+```bash
+python -I -c "import sys;sys.path.insert(0,'.');from qc.ws_cli import main;raise SystemExit(main())" view --workspace ws/ --doc D1
+```
+
+## 8. 稳定标识
 - `package_uid = sha256(doc_id, team_id, package_id)`；
 - `record_uid  = sha256(package_uid, 规范化记录内容, 出现序号)`；
 - `region_uid  = sha256(doc_id, layer, 包络起止)`；

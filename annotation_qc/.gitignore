@@ -1,6 +1,10 @@
 # 构建产物与运行时规模数据（不提交）
 out/
 *.db
+# 裁决工作区（含只读底稿副本与锁）
+*.db-journal
+.ws.lock
+ws_tmp/
 *.db-wal
 *.db-shm
 *.reject.json
