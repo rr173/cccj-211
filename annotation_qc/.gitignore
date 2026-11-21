@@ -5,6 +5,7 @@ out/
 *.db-journal
 .ws.lock
 .ledger.lock
+.audit.lock
 ws_tmp/
 *.db-wal
 *.db-shm

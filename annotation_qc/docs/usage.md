@@ -130,3 +130,22 @@ python -I -c "import sys;sys.path.insert(0,'.');from qc.ws_cli import main;raise
 
 业务身份不使用数据库自增号，也不使用团队局部 ID。合法记录或文件重排
 只可能改变物理行号（仅作证据），不改变任何逻辑标识与业务结果。
+
+## 9. 发布后独立盲审（qc-audit）
+在已登记发布之上，`qc-audit` 以只读上游做发布后抽检：按种子确定性抽取
+公文，连同该发布全部正式片段与有向引用交给审核员盲审，审核结论作为独立
+审计记录留存。审计库独立，不回写质检结果、裁决工作区或发布内容。
+
+```bash
+qc-audit create   --audit A --workspace ws/ --request create.json
+qc-audit blind    --audit A --batch B --out blind.jsonl
+qc-audit submit   --audit A --request submit.json --manifest manifest.json
+qc-audit coverage --audit A --batch B
+qc-audit results  --audit A --batch B
+```
+
+请求与导出格式、抽样规则与盲审标识见 `docs/audit.md`。`python -I` 下：
+
+```bash
+python -I -c "import sys;sys.path.insert(0,'.');from qc.audit_cli import main;raise SystemExit(main())" batches --audit A
+```

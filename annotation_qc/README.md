@@ -20,6 +20,11 @@
 永久锁仓并留存交付摘要，冲突组整组隔离；只做离线台账，不做训练、
 相似度打分，也不改动质检、工单与发布规则。
 
+再之上，**发布后独立盲审**（`docs/audit.md`）从已登记发布中按种子确定性地
+抽取公文，连同该发布的全部正式片段与有向引用交给审核员盲审；审核结论按
+盲审标识登记为独立审计记录。审计库独立，不回写质检结果、裁决工作区或
+发布内容。
+
 仅依赖 Python 3.11 标准库与 SQLite，可在 `python -I` 下运行；不做 OCR、
 文本修订、自动抽取或标注界面。
 
@@ -51,6 +56,12 @@ qc/
   ledger_upstream.py 只读上游存取（发布/审定片段/公文身份）
   ledger.py     变更批、交付确认、清单、解释、连通组局部重算
   ledger_cli.py 台账命令行（qc-ledger）
+  audit_schema.sql 发布后盲审库结构
+  audit_common.py  盲审连接/事务/文件锁/请求台账/错误对象
+  audit_upstream.py 只读上游存取（发布/发布片段/发布引用/公文身份）
+  audit_source.py  按批次绑定的底稿摘要核对证据坐标与原文
+  audit.py      确定性抽样、盲审批次快照、审核提交、只读查询与导出
+  audit_cli.py  盲审命令行（qc-audit）
 tools/
   make_fixtures.py  可重建小夹具（含独立手算表 hand_calc.json）
   scalegen.py       运行时规模生成器（产物不提交）
@@ -59,13 +70,19 @@ tools/
   ledger_fixture.py 台账演示小样本生成（真实管道；只留生成方式）
   ledger_demo.py    台账可复跑验收示例（甲/乙/丙/丁全场景）
   ledger_scalegen.py 台账规模生成与更新工作量实测（产物不提交）
+  audit_fixture.py  盲审小样本生成（真实管道；含逆序重建；只留生成方式）
+  audit_reference.py 不依赖产品实现的参考抽样（独立复算选中集合）
+  audit_scalegen.py 运行时大批文档生成（产物不提交）
+  audit_demo.py     盲审可复跑验收示例（逐条断言）
 tests/
   test_pipeline.py  31 个 unittest 用例
   test_workspace.py 26 个裁决工作区用例
   test_ledger.py    28 个分仓台账用例
+  test_audit.py     25 个发布后盲审用例
 docs/usage.md       入口与数据格式说明
 docs/adjudication.md 裁决工作区、工单合批与审定发布
 docs/ledger.md      分仓台账：证据、仓位规则、变更批与诊断
+docs/audit.md       发布后独立盲审：抽样、盲审标识、提交与导出台账
 ```
 
 ## 核心规则实现
@@ -162,6 +179,20 @@ qc-ledger credentials --ledger L --doc D1
 ```
 详见 `docs/ledger.md`。
 
+## 发布后盲审速览
+```bash
+# 从已登记发布里确定性抽样，建立可重开的盲审批次
+qc-audit create   --audit A --workspace ws/ --request create.json
+qc-audit blind    --audit A --batch <batch_id> --out blind.jsonl   # 审核员盲审导出
+qc-audit source   --audit A --batch <batch_id> --blind-doc bd_… --start 0 --end 8
+# 提交审核结论（按盲审标识；问题证据按底稿摘要核对坐标与原文）
+qc-audit submit   --audit A --request submit.json --manifest fixtures/manifest.json
+# 档案只读：抽中范围、未审记录、审计结论与可定位证据
+qc-audit coverage --audit A --batch <batch_id>
+qc-audit results  --audit A --batch <batch_id>
+```
+详见 `docs/audit.md`。
+
 ## 重建与测试
 ```bash
 # 1. 生成可重建小夹具（含手算表）
@@ -172,7 +203,7 @@ python -I -c "import sys;sys.path.insert(0,'.');from qc.cli import main;raise Sy
   build --manifest fixtures/manifest.json --packages fixtures/packages \
   --policy fixtures/policy.json --out out/warehouse.db
 
-# 3. 全部测试（85 用例：管道 31 + 裁决工作区 26 + 分仓台账 28）
+# 3. 全部测试（110 用例：管道 31 + 裁决工作区 26 + 分仓台账 28 + 盲审 25）
 python -I -m unittest discover -s tests -v
 
 # 3b. 裁决小样本与高扇出生成（产物不提交）
@@ -184,6 +215,12 @@ python -I tools/fanoutgen.py --root /tmp/fanout --fanout 20000
 python -I tools/ledger_demo.py --root /tmp/ldemo
 python -I tools/ledger_scalegen.py --root /tmp/lscale \
   --groups 1500 --large-group 2000
+
+# 3d. 盲审验收示例与参考抽样（产物不提交；--large-docs 追加有界内存实测）
+python -I tools/audit_demo.py --root /tmp/audit-demo --large-docs 20000
+python -I tools/audit_reference.py --workspace /tmp/audit-demo/src/ws \
+  --release <release_id> --sample-size 3 --seed 20261121 \
+  --audit /tmp/audit-demo/audit --batch <batch_id>
 
 # 4. 规模生成与构建实测（产物写到临时目录，不提交）
 python -I tools/scalegen.py --root /tmp/scale --teams 12 \
