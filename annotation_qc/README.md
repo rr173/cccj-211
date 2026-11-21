@@ -14,6 +14,12 @@
 两份工单一起合入审定稿，再按公文批次登记审定发布。它不改变自动质检的
 计票结果，也不重新读取标注团队的交付包。
 
+再之上，**分仓台账**（`docs/ledger.md`）以裁决工作区为只读上游，把
+「同一底稿 / 复用条款 / 人工同源」的公文归成连通组，产出训练、评测、
+隔离三张语料清单：选入按「档号 + 发布 ID」读取发布快照，交付确认按档号
+永久锁仓并留存交付摘要，冲突组整组隔离；只做离线台账，不做训练、
+相似度打分，也不改动质检、工单与发布规则。
+
 仅依赖 Python 3.11 标准库与 SQLite，可在 `python -I` 下运行；不做 OCR、
 文本修订、自动抽取或标注界面。
 
@@ -40,16 +46,26 @@ qc/
   ws_release.py 发布登记、待办阻挡、交付快照与流式导出
   ws_view.py    按版本查看与证据展开
   ws_cli.py     工作区命令行（qc-ws）
+  ledger_schema.sql 分仓台账库结构
+  ledger_common.py 台账连接/事务/文件锁/错误对象
+  ledger_upstream.py 只读上游存取（发布/审定片段/公文身份）
+  ledger.py     变更批、交付确认、清单、解释、连通组局部重算
+  ledger_cli.py 台账命令行（qc-ledger）
 tools/
   make_fixtures.py  可重建小夹具（含独立手算表 hand_calc.json）
   scalegen.py       运行时规模生成器（产物不提交）
   ws_fixture.py     可复跑的裁决小样本（只留生成方式）
   fanoutgen.py      运行时高扇出引用生成器（产物不提交）
+  ledger_fixture.py 台账演示小样本生成（真实管道；只留生成方式）
+  ledger_demo.py    台账可复跑验收示例（甲/乙/丙/丁全场景）
+  ledger_scalegen.py 台账规模生成与更新工作量实测（产物不提交）
 tests/
   test_pipeline.py  31 个 unittest 用例
   test_workspace.py 26 个裁决工作区用例
+  test_ledger.py    28 个分仓台账用例
 docs/usage.md       入口与数据格式说明
 docs/adjudication.md 裁决工作区、工单合批与审定发布
+docs/ledger.md      分仓台账：证据、仓位规则、变更批与诊断
 ```
 
 ## 核心规则实现
@@ -130,6 +146,22 @@ qc-ws export  --workspace ws/ --release <id> --what relations
 ```
 详见 `docs/adjudication.md`。
 
+## 分仓台账速览
+```bash
+# 建账：固定标注层、片段最短字节数与豁免表；上游为裁决工作区（只读）
+qc-ledger init  --ledger L --workspace ws/ --layer clause --min-bytes 16 \
+  --exempt exempt.json
+# 变更批：选入/改选/撤出/人工同源证据，整批原子入账，按批后状态算仓位
+qc-ledger apply   --ledger L --batch batch.json
+# 确认某版清单中的一部分已对外交付：按档号永久锁仓 + 留存交付摘要
+qc-ledger confirm --ledger L --request confirm.json
+# 导出训练/评测/隔离清单；查分组与不可交付原因；取历史交付凭据
+qc-ledger lists   --ledger L --out out/
+qc-ledger explain --ledger L --doc D1
+qc-ledger credentials --ledger L --doc D1
+```
+详见 `docs/ledger.md`。
+
 ## 重建与测试
 ```bash
 # 1. 生成可重建小夹具（含手算表）
@@ -140,13 +172,18 @@ python -I -c "import sys;sys.path.insert(0,'.');from qc.cli import main;raise Sy
   build --manifest fixtures/manifest.json --packages fixtures/packages \
   --policy fixtures/policy.json --out out/warehouse.db
 
-# 3. 全部测试（57 用例：管道 31 + 裁决工作区 26）
+# 3. 全部测试（85 用例：管道 31 + 裁决工作区 26 + 分仓台账 28）
 python -I -m unittest discover -s tests -v
 
 # 3b. 裁决小样本与高扇出生成（产物不提交）
 python -I tools/ws_fixture.py --root /tmp/wsample \
   --workspace /tmp/wsample/ws --tickets-dir /tmp/wsample/tickets
 python -I tools/fanoutgen.py --root /tmp/fanout --fanout 20000
+
+# 3c. 分仓台账验收示例与规模实测（产物不提交）
+python -I tools/ledger_demo.py --root /tmp/ldemo
+python -I tools/ledger_scalegen.py --root /tmp/lscale \
+  --groups 1500 --large-group 2000
 
 # 4. 规模生成与构建实测（产物写到临时目录，不提交）
 python -I tools/scalegen.py --root /tmp/scale --teams 12 \

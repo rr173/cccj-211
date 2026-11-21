@@ -4,6 +4,7 @@ out/
 # 裁决工作区（含只读底稿副本与锁）
 *.db-journal
 .ws.lock
+.ledger.lock
 ws_tmp/
 *.db-wal
 *.db-shm
